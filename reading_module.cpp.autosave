@@ -1,0 +1,154 @@
+#include "reading_module.hpp"
+
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <stdexcept>
+
+
+using namespace std;
+
+const unsigned int SPLIT_ERROR = 0;
+
+
+
+Splitter::Splitter(const string& string_to_split){
+
+    text_=string_to_split;
+
+}
+
+void Splitter::set_string_to_split(const string& string_to_split){
+
+    text_=string_to_split;
+
+}
+
+unsigned int Splitter::split(char separator, bool ignore_empty){
+
+    string::size_type start_position= 0;
+    string::size_type pos= text_.find(separator, start_position);
+    string temp="";
+    while(pos!=string::npos){
+
+        temp=text_.substr(start_position,pos-start_position);//a,"",bc
+       if ((temp=="" && ignore_empty==false)||temp!=""){
+            word_vector_.push_back(temp);
+        }
+        start_position=pos+1;
+        pos= text_.find(separator, start_position);
+
+
+    }
+    word_vector_.push_back(text_.substr(start_position));
+
+    return word_vector_.size();
+
+}
+
+unsigned int Splitter::number_of_fields() const{
+
+    return word_vector_.size();
+
+}
+
+string Splitter::fetch_field(unsigned int field_index) const{
+
+    if (field_index>word_vector_.size()||word_vector_.size()==0){
+
+       return "too large index or split not called";
+
+    }else{
+
+       return word_vector_.at(field_index);
+
+    }
+
+}
+
+
+class Document {
+  public:
+    Document();
+
+    // There are two ways to add text to a Document object:
+    // from a string or from a file.
+    void append_text_from_string(const string& text);
+    bool append_text_from_file(const string& filename);
+
+    // Setter methods for modifying the values that affect
+    // to how the document is printed on the screen.
+    bool set_line_length(int line_length);
+    bool set_page_height(int lines_per_page);
+
+    void print() const;
+
+  private:
+    // The words of a document are stored separately in a vector
+    // one word per element of the vector.
+    vector<string> word_vector_;
+
+    // Values that affect to the look of the document when printed
+    // on screen using the print method.
+    unsigned int line_length_;
+    unsigned int number_of_lines_per_page_;
+};
+
+//----------------------------------------------------------------------------
+
+Document::Document():
+    word_vector_( { } ),
+    line_length_(DEFAULT_LINE_LENGTH),
+    number_of_lines_per_page_(DEFAULT_PAGE_HEIGHT) {
+}
+
+
+void Document::append_text_from_string(const string& text) {
+    // The text is split into words using the Splitter class
+    // from the weekly assignment.
+    Splitter splitter_object(text);
+    unsigned int number_of_words = splitter_object.split(' ', true);
+
+    // The individual words resulting from the split are
+    // appended to the word vector for later use.
+    for ( unsigned int i = 0; i < number_of_words; ++i ) {
+        word_vector_.push_back( splitter_object.fetch_field(i) );
+    }
+}
+
+
+bool Document::append_text_from_file(const string& filename) {
+    ifstream file(filename);
+
+    if ( not file ) {
+        return false;
+    }
+
+    string line;
+    while ( getline(file, line) ) {
+        // The lines read from a file are formed from words separated
+        // by spaces: we can utilize the append_text_from_string method
+        // above to add the words of a line into the document.
+        append_text_from_string(line);
+    }
+
+
+    file.close();
+
+    return true;
+}
+
+
+
+
+//int main()
+//{
+
+
+//    Document doc;
+
+//    doc.append_text_from_file("/home/mahmoodp/TIE-02206/weekly-assignment-03/test.txt");
+
+
+//}
